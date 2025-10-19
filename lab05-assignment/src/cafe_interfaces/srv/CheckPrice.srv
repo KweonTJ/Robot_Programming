@@ -1,0 +1,8 @@
+# Request
+string drink_name
+---
+# Response
+float32 price
+bool available
+bool success
+string message

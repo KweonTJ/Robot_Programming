@@ -1,0 +1,14 @@
+# Goal
+int32 order_id
+int32 table_number
+string drink_name
+---
+# Result
+bool success
+string message
+float32 delivery_time
+---
+# Feedback
+string current_location
+float32 distance_remaining
+int32 progress_percent

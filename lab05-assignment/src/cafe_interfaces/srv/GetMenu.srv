@@ -1,0 +1,7 @@
+# Request
+bool available_only
+---
+# Response
+MenuItem[] menu_items
+bool success
+string message

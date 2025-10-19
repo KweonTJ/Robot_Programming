@@ -1,0 +1,6 @@
+string robot_id
+float32 battery_level
+string current_location
+string current_task
+bool is_busy
+int64 timestamp
