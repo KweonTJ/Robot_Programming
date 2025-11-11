@@ -1,127 +1,98 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="assignment6_rover">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="assignment6_rover_flipped">
 
-  <!-- ======= Parameters (과제 조건) ======= -->
-  <xacro:property name="body_width"  value="0.5"/>   <!-- y 방향 전체 폭 -->
-  <xacro:property name="body_length" value="1.0"/>   <!-- x 방향 전체 길이 -->
-  <xacro:property name="body_height" value="0.3"/>   <!-- z 방향 두께 -->
+  <!-- parameters -->
+  <xacro:property name="body_width"  value="0.5"/>
+  <xacro:property name="body_length" value="1.0"/>
+  <xacro:property name="body_height" value="0.3"/>
 
   <xacro:property name="front_wheel_radius" value="0.3"/>
-  <xacro:property name="front_wheel_length" value="0.25"/>  <!-- 휠 두께 -->
-  <xacro:property name="caster_radius"      value="0.2"/>
+  <xacro:property name="front_wheel_length" value="0.25"/>
+  <xacro:property name="caster_radius" value="0.2"/>
 
-  <!-- 바닥 접촉 높이 계산용(샤시 하단 z = -body_height/2) -->
   <xacro:property name="z_bottom" value="${- body_height/2.0}"/>
 
-  <!-- 프론트 휠 위치(앞쪽 x=+0.45, 좌우 y=±0.25, wheel center z = 하단 + wheel_radius) -->
-  <xacro:property name="front_x" value="${ body_length/2.0 - 0.05 }"/>   <!-- 0.45 -->
-  <xacro:property name="front_y" value="${ body_width/2.0  - 0.00 }"/>   <!-- 0.25 -->
-  <xacro:property name="front_z" value="${ z_bottom + front_wheel_radius }"/> <!-- -0.15 + 0.3 = 0.15 -->
+  <!-- positions -->
+  <xacro:property name="front_x" value="${ body_length/2.0 }"/>  <!-- x=0.5 -->
+  <xacro:property name="front_y" value="${ body_width/2.0 }"/>  <!-- y=±0.25 -->
+  <xacro:property name="front_z" value="0.0"/>                  <!-- 수직 중앙 -->
+  <xacro:property name="caster_x" value="${ -body_length/2.0 + 0.25 }"/> <!-- -0.25 -->
+  <xacro:property name="caster_y" value="0.0"/>
+  <xacro:property name="caster_z" value="${ z_bottom + caster_radius }"/> <!-- 하단 접촉 -->
 
-  <!-- 리어 캐스터 위치(뒤쪽 x=-0.45, 좌우 y=±0.20, center z = 하단 + caster_radius) -->
-  <xacro:property name="rear_x" value="${ - body_length/2.0 + 0.05 }"/>  <!-- -0.45 -->
-  <xacro:property name="rear_y" value="${ body_width/2.0 - 0.05 }"/>     <!-- 0.20 -->
-  <xacro:property name="rear_z" value="${ z_bottom + caster_radius }"/>  <!-- -0.15 + 0.2 = 0.05 -->
+  <!-- 색상 -->
+  <gazebo reference="base_link"><material>Gazebo/Gray</material></gazebo>
+  <gazebo reference="front_left_wheel"><material>Gazebo/Red</material></gazebo>
+  <gazebo reference="front_right_wheel"><material>Gazebo/Red</material></gazebo>
+  <gazebo reference="rear_center_caster"><material>Gazebo/Black</material></gazebo>
 
-  <!-- ======= Gazebo tags (옵션) ======= -->
-  <gazebo reference="base_link">
-    <material>Gazebo/White</material>
-    <mu1>0.2</mu1><mu2>0.2</mu2>
-  </gazebo>
+  <!-- world_link: 전체 180도 회전 -->
+  <link name="world_link"/>
+  <joint name="flip_joint" type="fixed">
+    <parent link="world_link"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="3.1416 0 0"/>   <!-- X축 기준 180° 뒤집기 -->
+  </joint>
 
-  <gazebo reference="front_left_wheel"><material>Gazebo/Black</material><mu1>0.8</mu1><mu2>0.8</mu2></gazebo>
-  <gazebo reference="front_right_wheel"><material>Gazebo/Black</material><mu1>0.8</mu1><mu2>0.8</mu2></gazebo>
-  <gazebo reference="rear_left_caster"><material>Gazebo/Gray</material><mu1>0.6</mu1><mu2>0.6</mu2></gazebo>
-  <gazebo reference="rear_right_caster"><material>Gazebo/Gray</material><mu1>0.6</mu1><mu2>0.6</mu2></gazebo>
-
-  <!-- ======= Chassis ======= -->
+  <!-- chassis -->
   <link name="base_link">
     <visual>
-      <geometry>
-        <!-- 과제: 0.5 x 1.0 x 0.3 -->
-        <box size="${body_length} ${body_width} ${body_height}"/>
-      </geometry>
+      <geometry><box size="${body_length} ${body_width} ${body_height}"/></geometry>
     </visual>
     <collision>
-      <geometry>
-        <box size="${body_length} ${body_width} ${body_height}"/>
-      </geometry>
+      <geometry><box size="${body_length} ${body_width} ${body_height}"/></geometry>
     </collision>
     <inertial>
       <mass value="15"/>
-      <inertia ixx="0.10" iyy="0.10" izz="0.10" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <inertia ixx="0.10" iyy="0.10" izz="0.10" ixy="0" ixz="0" iyz="0"/>
     </inertial>
   </link>
 
-  <!-- ======= Front wheel macro (롤 90°, 회전축 y) ======= -->
+  <!-- front wheel macro -->
   <xacro:macro name="front_wheel" params="name x y z radius length">
     <link name="${name}">
       <visual>
-        <geometry>
-          <cylinder radius="${radius}" length="${length}"/>
-        </geometry>
-        <!-- cylinder 기본축 z -> 바퀴 축(y)로 맞추기 위해 roll=+90deg -->
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
         <origin rpy="1.5707 0 0"/>
       </visual>
       <collision>
-        <geometry>
-          <cylinder radius="${radius}" length="${length}"/>
-        </geometry>
+        <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
         <origin rpy="1.5707 0 0"/>
       </collision>
       <inertial>
         <mass value="1.0"/>
-        <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0.0" ixz="0.0" iyz="0.0"/>
+        <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
       </inertial>
     </link>
-
     <joint name="${name}_joint" type="continuous">
       <parent link="base_link"/>
       <child  link="${name}"/>
       <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
-      <!-- 굴림축: y -->
       <axis xyz="0 1 0"/>
-      <dynamics friction="0.1"/>
     </joint>
   </xacro:macro>
 
   <xacro:front_wheel name="front_left_wheel"
-                     x="${front_x}"  y="${ front_y}" z="${front_z}"
+                     x="${front_x}" y="${ front_y}" z="${front_z}"
                      radius="${front_wheel_radius}" length="${front_wheel_length}"/>
   <xacro:front_wheel name="front_right_wheel"
-                     x="${front_x}"  y="${-front_y}" z="${front_z}"
+                     x="${front_x}" y="${-front_y}" z="${front_z}"
                      radius="${front_wheel_radius}" length="${front_wheel_length}"/>
 
-  <!-- ======= Rear caster macro (구체 바퀴, continuous) ======= -->
-  <xacro:macro name="rear_caster" params="name x y z radius">
-    <link name="${name}">
-      <visual>
-        <geometry><sphere radius="${radius}"/></geometry>
-      </visual>
-      <collision>
-        <geometry><sphere radius="${radius}"/></geometry>
-      </collision>
-      <inertial>
-        <mass value="0.5"/>
-        <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0.0" ixz="0.0" iyz="0.0"/>
-      </inertial>
-    </link>
-
-    <joint name="${name}_joint" type="continuous">
-      <parent link="base_link"/>
-      <child  link="${name}"/>
-      <origin xyz="${x} ${y} ${z}" rpy="0 0 0"/>
-      <!-- 임의 회전축: z (캐스터 회전 자유도 표현용) -->
-      <axis xyz="0 0 1"/>
-      <dynamics friction="0.05"/>
-    </joint>
-  </xacro:macro>
-
-  <xacro:rear_caster name="rear_left_caster"
-                     x="${rear_x}" y="${ rear_y}" z="${rear_z}"
-                     radius="${caster_radius}"/>
-  <xacro:rear_caster name="rear_right_caster"
-                     x="${rear_x}" y="${-rear_y}" z="${rear_z}"
-                     radius="${caster_radius}"/>
+  <!-- caster -->
+  <link name="rear_center_caster">
+    <visual><geometry><sphere radius="${caster_radius}"/></geometry></visual>
+    <collision><geometry><sphere radius="${caster_radius}"/></geometry></collision>
+    <inertial>
+      <mass value="0.3"/>
+      <inertia ixx="0.005" iyy="0.005" izz="0.005" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="rear_center_caster_joint" type="continuous">
+    <parent link="base_link"/>
+    <child  link="rear_center_caster"/>
+    <origin xyz="${caster_x} ${caster_y} ${caster_z}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
 
 </robot>
